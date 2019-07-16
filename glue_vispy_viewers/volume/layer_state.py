@@ -20,6 +20,7 @@ class VolumeLayerState(VispyLayerState):
     vmax = CallbackProperty()
     subset_mode = CallbackProperty('data')
     limits_cache = CallbackProperty({})
+    log = CallbackProperty()
 
     def __init__(self, layer=None, **kwargs):
 

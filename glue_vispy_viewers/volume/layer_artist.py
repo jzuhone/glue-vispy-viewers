@@ -3,6 +3,8 @@ from __future__ import absolute_import, division, print_function
 import uuid
 import weakref
 
+import numpy as np
+
 from matplotlib.colors import ColorConverter
 
 from glue.core.data import Subset, Data
@@ -168,6 +170,22 @@ class VolumeLayerArtist(VispyLayerArtist):
             self._multivol.set_clim(self.id, (self.state.vmin, self.state.vmax))
         self.redraw()
 
+    _logged = False
+
+    def _update_log(self):
+        if self.state.log and not self._logged:
+            self.state.vmin = np.log10(self.state.vmin)
+            self.state.vmax = np.log10(self.state.vmax)
+            self._logged = True
+            self._update_limits()
+            self.redraw()
+        elif not self.state.log and self._logged:
+            self.state.vmin = 10**self.state.vmin
+            self.state.vmax = 10**self.state.vmax
+            self._logged = False
+            self._update_limits()
+            self.redraw()
+
     def _update_alpha(self):
         self._multivol.set_weight(self.id, self.state.alpha)
         self.redraw()
@@ -229,6 +247,9 @@ class VolumeLayerArtist(VispyLayerArtist):
 
         if force or 'color' in changed:
             self._update_cmap_from_color()
+
+        if force or 'log' in changed:
+            self._update_log()
 
         if force or 'vmin' in changed or 'vmax' in changed:
             self._update_limits()
