@@ -18,9 +18,10 @@ from ..common.layer_artist import VispyLayerArtist
 
 class DataProxy(object):
 
-    def __init__(self, viewer_state, layer_artist):
+    def __init__(self, viewer_state, layer_artist, logged=False):
         self._viewer_state = weakref.ref(viewer_state)
         self._layer_artist = weakref.ref(layer_artist)
+        self.logged = logged
 
     @property
     def layer_artist(self):
@@ -74,6 +75,9 @@ class DataProxy(object):
                 return broadcast_to(0, shape)
             else:
                 self.layer_artist.enable()
+
+        if self.logged:
+            np.log10(result, out=result)
 
         return result
 
@@ -178,12 +182,14 @@ class VolumeLayerArtist(VispyLayerArtist):
             self.state.vmax = np.log10(self.state.vmax)
             self._logged = True
             self._update_limits()
+            self._update_data()
             self.redraw()
         elif not self.state.log and self._logged:
             self.state.vmin = 10**self.state.vmin
             self.state.vmax = 10**self.state.vmax
             self._logged = False
             self._update_limits()
+            self._update_data()
             self.redraw()
 
     def _update_alpha(self):
@@ -201,9 +207,10 @@ class VolumeLayerArtist(VispyLayerArtist):
     def _update_data(self):
 
         if self._data_proxy is None:
-            self._data_proxy = DataProxy(self._viewer_state, self)
+            self._data_proxy = DataProxy(self._viewer_state, self, logged=self._logged)
             self._multivol.set_data(self.id, self._data_proxy, layer=self.layer)
         else:
+            self._data_proxy.logged = self._logged
             self._multivol._update_scaled_data(self.id)
 
         self._update_subset_mode()
